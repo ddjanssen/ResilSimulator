@@ -20,8 +20,9 @@ def load():
             all_basestations.append(new_basestation)
             i += 1
 
-
-        print("\nDone with loading")
+        print('\r', end='')
+        print("Loaded base stations:{}".format(i))
+        print("Done with loading")
 
 
 if __name__ == '__main__':
