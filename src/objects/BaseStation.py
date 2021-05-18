@@ -16,6 +16,9 @@ class BaseStation:
         self.updated = updated
         self.averageSignal = averageSignal
 
+        self.connectedBS = list()
+
+
 
 
         # NUMBER BETWEEN 0 AND 1 THAT REPRESENTS HOW FUNCTIONAL THE BASE STATION IS
