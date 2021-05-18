@@ -21,11 +21,15 @@ def setup():
     pass
 
 
-def fail(base_stations):
-    pass
+
 
 
 def create_links(base_stations):
+    link = base_stations[0] + base_stations[1]
+    print(link)
+    pass
+
+def fail(base_stations):
     pass
 
 

@@ -24,6 +24,8 @@ def load():
         print("Loaded base stations:{}".format(i))
         print("Done with loading")
 
+    return all_basestations
+
 
 if __name__ == '__main__':
     load()

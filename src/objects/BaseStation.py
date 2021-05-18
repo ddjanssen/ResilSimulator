@@ -1,3 +1,5 @@
+from src.objects.Link import Link
+
 
 class BaseStation:
     def __init__(self,radio,mcc,net,area,cell,unit,lon,lat,range,samples,changeable,created,updated,averageSignal):
@@ -17,7 +19,7 @@ class BaseStation:
         self.averageSignal = averageSignal
 
         self.connectedBS = list()
-
+        self.links = list()
 
 
 
@@ -31,6 +33,21 @@ class BaseStation:
 
     def malfunction(self,new_functional):
         self.functional = new_functional
+
+    def add_link(self,other,link):
+        self.connectedBS.append(other)
+        self.links.append(link)
+
+    def __add__(self, other):
+        self.connectedBS.append(other)
+        new_link = Link(self,other)
+        self.links.append(new_link)
+        other.add_link(self,new_link)
+        return new_link
+
+
+
+
 
 
 
