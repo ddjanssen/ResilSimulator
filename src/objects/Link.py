@@ -5,5 +5,4 @@ class Link:
         pass
 
     def __str__(self):
-        print("joejoe")
         return "Link between {} and {}".format(self.device1,self.device2)

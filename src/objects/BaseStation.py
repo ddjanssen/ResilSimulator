@@ -1,4 +1,7 @@
+import math
+
 from src.objects.Link import Link
+from math import sin, cos, sqrt, atan2, radians
 
 
 class BaseStation:
@@ -6,29 +9,33 @@ class BaseStation:
         self.radio = radio
         self.mcc = mcc
         self.net = net
-        self.area = area
-        self.cell = cell
-        self.unit = unit
-        self.lon = lon
-        self.lat = lat
-        self.range = range
-        self.samples = samples
-        self.changeable = changeable
-        self.created = created
-        self.updated = updated
-        self.averageSignal = averageSignal
+        self.area = int(area)
+        self.cell = int(cell)
+        self.unit = int(unit)
+        self.lon = float(lon)
+        self.lat = float(lat)
+        self.range = float(range)
+        self.samples = int(samples)
+        self.changeable = int(changeable)
+        self.created = int(created)
+        self.updated = int(updated)
+        self.averageSignal = float(averageSignal)
+
+        self.connected_UE = list()
 
         self.connectedBS = list()
         self.links = list()
 
 
+        # TODO: DETERMINE HOW THE BADNWITHS SHOULD BE USED
+        # FOR EXAMPLE THE BANDWITHS PER CHANNEL ON LTE IS: 1.4,3,5,10,15,20 MHz but that is different on GSM and UMTS networks
 
         # NUMBER BETWEEN 0 AND 1 THAT REPRESENTS HOW FUNCTIONAL THE BASE STATION IS
         # INITIALLY THIS IS 1 BECAUSE A BASE STATION SHOULD FUNCTION PROPERLY BEFORE IT MAL FUNCTIONS
         self.functional = 1
 
     def __str__(self):
-        return "Base station[{}], lon:{}, lat:{}, radio:{}".format(self.cell,self.lon,self.lat,self.radio)
+        return "Base station[{}], lon:{}, lat:{}, radio:{}, LAC: {}".format(self.cell,self.lon,self.lat,self.radio,self.net)
 
 
     def malfunction(self,new_functional):
@@ -44,6 +51,19 @@ class BaseStation:
         self.links.append(new_link)
         other.add_link(self,new_link)
         return new_link
+
+    def add_UE(self,UE):
+        self.connected_UE.append(UE)
+
+
+    def shannon_capacity(self,UE):
+        # TODO change the numbers to be dynamic
+        bandwith_for_user = 100
+        signal_strength = 50
+        signal_noise = 50
+        SNR = signal_strength/signal_noise
+        capacity = bandwith_for_user * math.log2(1 + SNR)
+        return capacity
 
 
 
