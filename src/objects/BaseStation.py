@@ -29,7 +29,7 @@ class BaseStation:
 
         # TODO: DETERMINE HOW THE BADNWITHS SHOULD BE USED
         # FOR EXAMPLE THE BANDWITHS PER CHANNEL ON LTE IS: 1.4,3,5,10,15,20 MHz but that is different on GSM and UMTS networks
-
+        #
         # NUMBER BETWEEN 0 AND 1 THAT REPRESENTS HOW FUNCTIONAL THE BASE STATION IS
         # INITIALLY THIS IS 1 BECAUSE A BASE STATION SHOULD FUNCTION PROPERLY BEFORE IT MAL FUNCTIONS
         self.functional = 1
@@ -58,9 +58,9 @@ class BaseStation:
 
     def shannon_capacity(self,UE):
         # TODO change the numbers to be dynamic
-        bandwith_for_user = 100
-        signal_strength = 50
-        signal_noise = 50
+        bandwith_for_user = 20  #1.4, 3, 5, 10, 15, 20 MHz for lte base stations per band total bands: 5
+        signal_strength = 43 #for lte basestations
+        signal_noise = -20
         SNR = signal_strength/signal_noise
         capacity = bandwith_for_user * math.log2(1 + SNR)
         return capacity

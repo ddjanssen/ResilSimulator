@@ -1,5 +1,5 @@
-from objects.UE import UserEquipment
-from src.settings import BS_BS_RANGE, POPULATION_AMOUNT, MIN_LON, MAX_LON, MIN_LAT, MAX_LAT, UE_BANDWITH_MIN, UE_BANDWITH_MAX
+from src.objects.UE import UserEquipment
+from src.settings import BS_BS_RANGE, POPULATION_AMOUNT, MIN_LON, MAX_LON, MIN_LAT, MAX_LAT, UE_CAPACITY_MIN, UE_CAPACITY_MAX
 import numpy as np
 from src.util import distance,load
 
