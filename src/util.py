@@ -1,9 +1,10 @@
 from math import radians, sin, cos, atan2, sqrt
 import csv
 from objects.BaseStation import BaseStation
-from settings import CSV_PATH, MAX_LAT,MIN_LAT,MAX_LON,MIN_LON
+from settings import CSV_PATH, MAX_LAT, MIN_LAT, MAX_LON, MIN_LON
 
-def distance(lat1,lon1,lat2,lon2):
+
+def distance(lat1, lon1, lat2, lon2):
     r = 6378.137
     lat1 = radians(lat1)
     lat2 = radians(lat2)
@@ -19,23 +20,20 @@ def distance(lat1,lon1,lat2,lon2):
     return distance * 1000
 
 
-
 def load():
     all_basestations = list()
     all_basestations_dict = dict()
 
-
-
-    with open(CSV_PATH,newline='') as f:
+    with open(CSV_PATH, newline='') as f:
         filereader = csv.DictReader(f)
 
         print("Loading base station")
         i = 0
-        print(i,end='')
+        print(i, end='')
         for row in filereader:
             if i % 100 == 0:
-                print('\r',end='')
-                print("Loaded base stations:{}".format(i),end='')
+                print('\r', end='')
+                print("Loaded base stations:{}".format(i), end='')
 
             lon = float(row["lon"])
             lat = float(row["lat"])
@@ -53,6 +51,5 @@ def load():
         print('\r', end='')
         print("Loaded base stations:{}".format(len(all_basestations)))
         print("Done with loading")
-
 
     return all_basestations

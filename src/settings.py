@@ -25,12 +25,15 @@ POPULATION_AMOUNT = 158553
 
 # if a large disaster occured, for instance a natural disaster or a depending failure
 LARGE_DISASTER = True
+LOC_LON = 5.827290
+LOC_LAT = 52.19
+RADIUS = 300
 
 # malicious attacks on a certain region, for instance a DDoS
-MALICIOUS_ATTACK = True
+MALICIOUS_ATTACK = False
 
 # small individual errors on some base stations
-SMALL_ERRORS = True
+SMALL_ERRORS = False
 
 
 
