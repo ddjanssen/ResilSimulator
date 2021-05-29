@@ -19,4 +19,4 @@ class UserEquipment:
         self.link = link
 
     def __str__(self):
-        return "UE[{}], bandwith: {}, lon: {}, lat: {}, \nClosest Base Station: {}".format(self.id, self.requested_capacity, self.lon, self.lat, str(self.base_station))
+        return "UE[{}], bandwith: {}, lon: {}, lat: {}".format(self.id, self.requested_capacity, self.lon, self.lat)

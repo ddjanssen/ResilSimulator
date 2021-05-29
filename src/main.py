@@ -2,20 +2,27 @@ from objects.Link import BS_UE_Link
 from src.objects.UE import UserEquipment
 from src.settings import *
 import numpy as np
-from src.util import distance, load
+from src.util import distance, load, isolated_users,received_service,avg_distance
 
 
 def main():
-    setup()
+    base_stations,UE,links = setup()
+    base_line = simulate(base_stations,UE,links)
+    fail(base_stations,links)
+
+    bs
+
+    # TODO: recreate UE connections
+    values = simulate(base_stations,UE,links)
 
     pass
 
 
 def setup():
     base_stations = load()
-    connected_base_stations(base_stations)
+    links = connected_base_stations(base_stations)
     UE = create_UE(base_stations)
-    return base_stations, UE
+    return base_stations, UE, links
 
 
 def connected_base_stations(base_stations):
@@ -63,7 +70,7 @@ def create_UE(base_stations):
         for j in range(len(base_stations)):
             bs = base_stations[j]
             dist = distance(lat, lon, bs.lat, bs.lon)
-            if dist < bs.range:
+            if dist < bs.range_bs:
                 if not closest_bs:
                     closest_bs = (bs, dist)
                     continue
@@ -73,7 +80,7 @@ def create_UE(base_stations):
         if closest_bs:
             new_UE = UserEquipment(i, lon, lat, all_cap[i])
             new_link = BS_UE_Link(new_UE,closest_bs[0],closest_bs[1])
-            closest_bs[1].add_UE(new_link)
+            closest_bs[0].add_UE(new_link)
             new_UE.set_base_station(new_link)
             all_UE.append(new_UE)
 
@@ -84,7 +91,7 @@ def create_UE(base_stations):
     return all_UE
 
 
-def fail(base_stations):
+def fail(base_stations,links):
     # TODO: determine how well each BS will function when an error occured
     if LARGE_DISASTER:
         for BS in base_stations:
@@ -101,9 +108,15 @@ def fail(base_stations):
     pass
 
 
-def simulate(base_stations, links):
+def simulate(base_stations,UE, links):
     # TODO: create a simulation that simulates packet flow etc
     # TODO: also determines the resilience
+
+    iso_users = isolated_users(UE)
+    percentage_received_service = received_service(UE)
+    average_distance_to_bs = avg_distance(UE)
+
+
     pass
 
 

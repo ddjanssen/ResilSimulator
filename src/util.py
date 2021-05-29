@@ -1,7 +1,8 @@
-from math import radians, sin, cos, atan2, sqrt
+import math
+from math import radians, sin, cos, atan2, sqrt, log10
 import csv
-from objects.BaseStation import BaseStation
-from settings import CSV_PATH, MAX_LAT, MIN_LAT, MAX_LON, MIN_LON
+import objects.BaseStation as bs
+from settings import *
 
 
 def distance(lat1, lon1, lat2, lon2):
@@ -40,7 +41,7 @@ def load():
             if MIN_LON <= lon <= MAX_LON and MIN_LAT <= lat <= MAX_LAT:
                 # TODO: ASK IF THE LOCAL AREA CODE CAN BE USED TO COMBINE CELLS
                 if row["area"] not in all_basestations_dict:
-                    new_basestation = BaseStation(row["radio"], row["mcc"], row["net"], row["area"], row["cell"], row["unit"], lon, lat, row["range"], row["samples"], row["changeable"], row["created"], row["updated"], row["averageSignal"])
+                    new_basestation = bs.BaseStation(row["radio"], row["mcc"], row["net"], row["area"], row["cell"], row["unit"], lon, lat, row["range"], row["samples"], row["changeable"], row["created"], row["updated"], row["averageSignal"])
                     all_basestations_dict[row["area"]] = new_basestation
                     all_basestations.append(new_basestation)
                 else:
@@ -53,3 +54,45 @@ def load():
         print("Done with loading")
 
     return all_basestations
+
+
+def SNR(signal_strength, signal_noise):
+    return signal_strength / signal_noise
+
+
+def pathloss(distance):
+    return MODEL_A + MODEL_B * log10(distance)
+
+
+def isolated_users(UE):
+    counter = 0
+    for user in UE:
+        if user.link is None:
+            counter += 1
+    return counter
+
+
+def received_service(UE):
+    percentages = [(user.link.shannon_capacity if user.link else 0) / user.requested_capacity for user in UE]
+    return sum(percentages) / len(percentages)
+
+
+def avg_distance(UE):
+    distances = []
+    for user in UE:
+        if user.link:
+            distances.append(user.link.distance)
+
+    return sum(distances) / len(distances)
+
+
+def SNR_averages(UE):
+    snrs = [SNR(user.base_station.signal_strength, pathloss(user.distance)) for user in UE]
+    return sum(snrs) / len(snrs)
+
+
+def shannon_capacity(bandwidth, signal_strength, distance):
+    signal_noise = pathloss(distance)
+    SNR = signal_strength / (10 ** (signal_noise/10))
+    capacity = bandwidth * math.log2(1 + SNR)
+    return capacity
