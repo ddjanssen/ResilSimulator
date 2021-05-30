@@ -28,7 +28,7 @@ class BaseStation:
         for g in range(OPEN_CHANNELS):
             self.channels.append(Channel(g))
 
-        self.signal_strength = 10 ** (BASE_POWER/10)
+        self.signal_strength = BASE_POWER
 
         # TODO: DETERMINE HOW THE BADNWITHS SHOULD BE USED
         # FOR EXAMPLE THE BANDWITHS PER CHANNEL ON LTE IS: 1.4,3,5,10,15,20 MHz but that is different on GSM and UMTS networks
@@ -56,7 +56,6 @@ class BaseStation:
         return new_link
 
     def add_UE(self, link: BS_UE_Link):
-        # TODO fix channel layers
         self.connected_UE_links.append(link)
         self.connected_UE.append(link.ue)
 
@@ -74,7 +73,6 @@ class BaseStation:
                         bandwidthneeded = CHANNEL_BANDWIDTHS[0]
                     else:
                         bandwidthneeded = CHANNEL_BANDWIDTHS[bandwidth - 1]
-
                     break
 
                 if bandwidth == bandwidth_length - 1:
@@ -93,6 +91,22 @@ class BaseStation:
             for ue in ues:
                 channel = max(self.channels,key=lambda c:(c.productivity,c.band_left))
                 channel.add_devices(ue,bandwidth)
+
+    def getBandwidth(self,UE):
+        for channel in self.channels:
+            bandwidth = channel.getBandwidth(UE)
+            if bandwidth is not None:
+                return bandwidth
+
+
+        return 0
+
+
+    def reset(self):
+        self.connected_UE.clear()
+        self.connected_UE_links.clear()
+        for channel in self.channels:
+            channel.reset()
 
 
 class Channel:
@@ -118,7 +132,6 @@ class Channel:
                     stop_next = True
 
             if stop_next:
-                print("Too many devices connected to this base station")
                 self.devices[device] = 0
                 break
 
@@ -145,5 +158,16 @@ class Channel:
             msg += "\n{} Desired Bandwidth:{}, Actual Bandwidth:{}".format(device,self.desired_band[device],self.devices[device])
 
         return msg
+
+    def getBandwidth(self, UE):
+        if UE not in self.devices:
+            return None
+
+        return self.devices[UE]
+
+
+    def reset(self):
+        self.devices.clear()
+        self.desired_band.clear()
 
 

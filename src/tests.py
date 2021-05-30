@@ -17,12 +17,13 @@ def base_station_test():
 
 
 def channel_test():
-    AMOUNT_OF_DEVICES = 15
+    AMOUNT_OF_DEVICES = 25
 
     BS = BaseStation("LTE", 204, 8, 404, 123123, 0, 5, 52, 1000, 106, 1, 12941189449, 13842455404, 0)
-    all_cap = np.random.randint(5,30,AMOUNT_OF_DEVICES)
-    dummy_lat, dummyLon = 52.004,5.0001
+    all_cap = np.random.randint(12,50,AMOUNT_OF_DEVICES)
+    dummy_lat, dummyLon = 52.11,5.0001
     dist = distance(dummy_lat,dummyLon,52,5)
+    print(dist)
 
     for i in range(AMOUNT_OF_DEVICES):
         dummyUE = UserEquipment(0,dummyLon,dummy_lat,all_cap[i])
@@ -33,6 +34,7 @@ def channel_test():
 
     BS.direct_capacities()
     print(BS)
+    print(link.shannon_capacity)
 
 
 

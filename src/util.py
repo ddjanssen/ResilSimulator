@@ -61,7 +61,7 @@ def SNR(signal_strength, signal_noise):
 
 
 def pathloss(distance):
-    return MODEL_A + MODEL_B * log10(distance)
+    return MODEL_A + MODEL_B * log10(distance/1000)
 
 
 def isolated_users(UE):
@@ -73,7 +73,12 @@ def isolated_users(UE):
 
 
 def received_service(UE):
-    percentages = [(user.link.shannon_capacity if user.link else 0) / user.requested_capacity for user in UE]
+    percentages = []
+
+    for user in UE:
+        if user.link is not None:
+            percentages.append(user.link.shannon_capacity/user.requested_capacity)
+
     return sum(percentages) / len(percentages)
 
 
@@ -91,8 +96,16 @@ def SNR_averages(UE):
     return sum(snrs) / len(snrs)
 
 
-def shannon_capacity(bandwidth, signal_strength, distance):
-    signal_noise = pathloss(distance)
-    SNR = signal_strength / (10 ** (signal_noise/10))
+def to_pwr(db):
+    return 10**(db/10)
+
+
+def to_db(pwr):
+    return 10 * log10(pwr)
+
+
+def shannon_capacity(bandwidth, TX, distance):
+    RX = TX - max(pathloss(distance)-G_TX-G_RX,MCL)
+    SNR = to_pwr(RX) / to_pwr(SIGNAL_NOISE)
     capacity = bandwidth * math.log2(1 + SNR)
     return capacity
