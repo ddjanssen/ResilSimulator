@@ -2,82 +2,82 @@ from objects.Link import BS_UE_Link
 from src.objects.UE import UserEquipment
 from src.settings import *
 import numpy as np
-from src.util import distance, load, isolated_users, received_service, avg_distance
+import util
 
 
 def main():
-    base_stations, UE, links = setup()
-    for bs in base_stations:
-        bs.direct_capacities()
-    base_line = simulate(base_stations, UE, links)
+    all_cities = util.load_cities()
 
-    reset_all(base_stations,UE)
-    fail(base_stations, links)
-    connect_UE_BS(UE,base_stations)
-    for bs in base_stations:
-        bs.direct_capacities()
+    for city in all_cities:
+        print("Starting simulation for city:{}".format(city.name))
+        base_stations, UE,links = setup(city)
+        print("Directing capacities to the users")
+        for bs in base_stations:
+            bs.direct_capacities()
 
-    values = simulate(base_stations, UE, links)
+        print("Creating base line resilience metrics")
+        base_line = simulate(base_stations, UE, links)
+
+        print("Resetting base stations and UE")
+        reset_all(base_stations,UE)
+        print("Failing base stations and links")
+        fail(base_stations, links,city)
+        print("Connecting UE to BS again")
+        connect_UE_BS(UE,base_stations)
+        print("Directing capacities to the users")
+        for bs in base_stations:
+            bs.direct_capacities()
+
+        print("Creating resilience metrics after failure")
+        values = simulate(base_stations, UE, links)
+
+        print("------------------------------------------------------")
 
     pass
 
 
-def setup():
-    base_stations = load()
+def setup(city):
+    print("Loading base stations")
+    base_stations = util.load(city.min_lat,city.min_lon,city.max_lat,city.max_lon)
+    print("Creating links between base stations")
     links = connected_base_stations(base_stations)
-    UE = create_UE()
+    print("Creating UE")
+    UE = create_UE(city)
+    print("Connecting UE to BS")
     connect_UE_BS(UE,base_stations)
     return base_stations, UE, links
 
 
 def connected_base_stations(base_stations):
-    print("Creating links")
     links = list()
     len_base_stations = len(base_stations)
-    print("Creating links for Basestations:{}/{}".format(0, len_base_stations), end='')
     for i in range(len_base_stations):
         first = base_stations[i]
-
-        print('\r', end='')
-        print("Creating links for Basestations:{}/{}".format(i, len_base_stations), end='')
         for j in range(i + 1, len_base_stations):
             second = base_stations[j]
 
             if first.radio != second.radio:
                 continue
 
-            dist = distance(first.lat, first.lon, second.lat, second.lon)
+            dist = util.distance(first.lat, first.lon, second.lat, second.lon)
             if dist < BS_BS_RANGE:
                 link = first + second
                 links.append(link)
-
-    print('\r', end='')
-    print("Creating links for Base Stations: {}/{}".format(len_base_stations, len_base_stations))
-    print("Amount of links created: {}".format(len(links)))
-    print("Done with creating links")
     return links
 
 
-def create_UE():
+def create_UE(city):
     all_UE = list()
-    all_lon = np.random.uniform(MIN_LON, MAX_LON, POPULATION_AMOUNT)
-    all_lat = np.random.uniform(MIN_LAT, MAX_LAT, POPULATION_AMOUNT)
-    all_cap = np.random.randint(UE_CAPACITY_MIN, UE_CAPACITY_MAX, POPULATION_AMOUNT)
-    print("Created UE:{}".format(0), end='')
-    for i in range(POPULATION_AMOUNT):
-        if i % 100 == 0:
-            print('\r', end='')
-            print("Created UE:{}".format(i), end='')
-
+    all_lon = np.random.uniform(city.min_lon, city.max_lon, city.population_amount)
+    all_lat = np.random.uniform(city.min_lat, city.max_lat, city.population_amount)
+    all_cap = np.random.randint(UE_CAPACITY_MIN, UE_CAPACITY_MAX, city.population_amount)
+    for i in range(city.population_amount):
         lon = all_lon[i]
         lat = all_lat[i]
 
         new_UE = UserEquipment(i, lon, lat, all_cap[i])
         all_UE.append(new_UE)
 
-    print('\r', end='')
-    print("Created UE:{}".format(POPULATION_AMOUNT))
-    print("Done with creating UE")
 
     return all_UE
 
@@ -87,7 +87,7 @@ def connect_UE_BS(UE, base_stations):
         closest_bs = None
         for j in range(len(base_stations)):
             bs = base_stations[j]
-            dist = distance(user.lat, user.lon, bs.lat, bs.lon)
+            dist = util.distance(user.lat, user.lon, bs.lat, bs.lon)
             if dist < bs.range_bs and bs.functional > 0:
                 if not closest_bs:
                     closest_bs = (bs, dist)
@@ -104,11 +104,15 @@ def connect_UE_BS(UE, base_stations):
             user.set_base_station(new_link)
 
 
-def fail(base_stations, links):
+def fail(base_stations, links,city):
     # TODO: determine how well each BS will function when an error occured
     if LARGE_DISASTER:
+        random_lat = np.random.uniform(city.min_lat,city.max_lat,1)[0]
+        random_lon = np.random.uniform(city.min_lon,city.max_lon,1)[0]
+
+
         for BS in base_stations:
-            dist = distance(BS.lat, BS.lon, LOC_LAT, LOC_LON)
+            dist = util.distance(BS.lat, BS.lon, random_lat, random_lon)
             if dist < RADIUS:
                 # When closer to the epicentre the BS will function less good
                 if POWER_OUTAGE:
@@ -128,11 +132,13 @@ def simulate(base_stations, UE, links):
     # TODO: create a simulation that simulates packet flow etc
     # TODO: also determines the resilience
 
-    iso_users = isolated_users(UE)
-    percentage_received_service = received_service(UE)
-    average_distance_to_bs = avg_distance(UE)
+    iso_users = util.isolated_users(UE)
+    percentage_received_service = util.received_service(UE)
+    average_distance_to_bs = util.avg_distance(UE)
 
-    print(iso_users, percentage_received_service, average_distance_to_bs)
+    iso_systems = util.isolated_systems(base_stations)
+
+    print(iso_users, percentage_received_service, average_distance_to_bs,iso_systems)
 
 
 def reset_all(base_stations,UE):
