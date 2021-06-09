@@ -59,7 +59,7 @@ def SNR(signal_strength, signal_noise):
 
 
 def pathloss(distance):
-    return MODEL_A + MODEL_B * log10(distance / 1000)
+    return (MODEL_A + MODEL_B * log10(distance / 1000)) * sqrt(10) * np.random.random()
 
 
 def isolated_users(UE):
@@ -67,7 +67,7 @@ def isolated_users(UE):
     for user in UE:
         if user.link is None:
             counter += 1
-    return counter
+    return counter / len(UE)
 
 
 def received_service(UE):
@@ -88,6 +88,8 @@ def received_service_half(UE):
         if user.link is not None:
             if user.link.shannon_capacity / user.requested_capacity < 0.5:
                 percentages += 1
+        else:
+            percentages += 1
 
     return percentages / len(UE)
 
