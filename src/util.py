@@ -82,16 +82,14 @@ def received_service(UE):
 
 
 def received_service_half(UE):
-    percentages = 0
+    counter = 0
 
     for user in UE:
         if user.link is not None:
-            if user.link.shannon_capacity / user.requested_capacity < 0.5:
-                percentages += 1
-        else:
-            percentages += 1
+            if user.link.shannon_capacity / user.requested_capacity >= 0.5:
+                counter += 1
 
-    return percentages / len(UE)
+    return counter / len(UE)
 
 
 def avg_distance(UE):
@@ -186,10 +184,7 @@ def create_plot(city_results):
 
 def cdf(data, confidence=0.95):
     processed_data = [d for d in data if d]
-    if len(processed_data) == 0:
-        return 0
-
-    if len(processed_data) == 1:
+    if len(processed_data) == 0 or len(processed_data) == 1:
         return 0
 
     mean, se = np.mean(processed_data), st.sem(processed_data)
