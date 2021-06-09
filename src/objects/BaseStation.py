@@ -1,7 +1,7 @@
 from settings import OPEN_CHANNELS, CHANNEL_BANDWIDTHS, BASE_POWER
 from src.objects.Link import BS_BS_Link, BS_UE_Link
 import util
-
+import math
 
 class BaseStation:
     def __init__(self, radio, mcc, net, area, cell, unit, lon, lat, range_bs, samples, changeable, created, updated, averageSignal):
@@ -29,12 +29,6 @@ class BaseStation:
             self.channels.append(Channel(g))
 
         self.signal_strength = BASE_POWER
-
-        # TODO: DETERMINE HOW THE BADNWITHS SHOULD BE USED
-        # FOR EXAMPLE THE BANDWITHS PER CHANNEL ON LTE IS: 1.4,3,5,10,15,20 MHz but that is different on GSM and UMTS networks
-        #
-        # NUMBER BETWEEN 0 AND 1 THAT REPRESENTS HOW FUNCTIONAL THE BASE STATION IS
-        # INITIALLY THIS IS 1 BECAUSE A BASE STATION SHOULD FUNCTION PROPERLY BEFORE IT MAL FUNCTIONS
         self.functional = 1
 
     def __str__(self):
@@ -45,6 +39,7 @@ class BaseStation:
 
     def malfunction(self, new_functional):
         self.functional = new_functional
+        self.create_new_channels()
 
     def add_link(self, link: BS_BS_Link):
         self.connected_BS.append(link)
@@ -101,13 +96,20 @@ class BaseStation:
 
         return 0
 
+    def create_new_channels(self):
+        z = math.floor(OPEN_CHANNELS * self.functional)
+        self.channels.clear()
+        for g in range(z):
+            self.channels.append(Channel(g))
 
     def reset(self):
+        self.functional = 1
+        self.create_new_channels()
         self.connected_UE.clear()
         self.connected_UE_links.clear()
-        for channel in self.channels:
-            channel.reset()
 
+    def get_copy(self):
+        return BaseStation(self.radio, self.mcc, self.net, self.area, self.cell, self.unit, self.lon, self.lat, self.range_bs, self.samples, self.changeable, self.created, self.updated, self.averageSignal)
 
 class Channel:
     def __init__(self,id):
@@ -169,5 +171,7 @@ class Channel:
     def reset(self):
         self.devices.clear()
         self.desired_band.clear()
+
+
 
 

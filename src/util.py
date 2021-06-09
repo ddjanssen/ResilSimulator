@@ -4,15 +4,16 @@ import csv
 import objects.BaseStation as bs
 from objects.City import City
 from settings import *
-
+import plotly.graph_objects as go
+import scipy.stats as st
 
 
 def load_cities():
     all_cities = list()
-    with open(CITY_PATH,newline='') as f:
+    with open(CITY_PATH, newline='') as f:
         filereader = csv.DictReader(f)
         for row in filereader:
-            all_cities.append(City(row["name"],row["min_lat"],row["min_lon"],row["max_lat"],row["max_lon"],row["population_amount"]))
+            all_cities.append(City(row["name"], row["min_lat"], row["min_lon"], row["max_lat"], row["max_lon"], row["population_amount"]))
 
     return all_cities
 
@@ -33,7 +34,7 @@ def distance(lat1, lon1, lat2, lon2):
     return distance * 1000
 
 
-def load(min_lat,min_lon,max_lat,max_lon):
+def load(min_lat, min_lon, max_lat, max_lon):
     all_basestations = list()
     all_basestations_dict = dict()
 
@@ -74,9 +75,21 @@ def received_service(UE):
 
     for user in UE:
         if user.link is not None:
-            percentages.append(user.link.shannon_capacity / user.requested_capacity)
+            perc = 1 if user.link.shannon_capacity / user.requested_capacity else user.link.shannon_capacity / user.requested_capacity
+            percentages.append(perc)
 
     return sum(percentages) / len(percentages) if len(percentages) != 0 else 0
+
+
+def received_service_half(UE):
+    percentages = 0
+
+    for user in UE:
+        if user.link is not None:
+            if user.link.shannon_capacity / user.requested_capacity < 0.5:
+                percentages += 1
+
+    return percentages / len(UE)
 
 
 def avg_distance(UE):
@@ -85,7 +98,7 @@ def avg_distance(UE):
         if user.link:
             distances.append(user.link.distance)
 
-    return sum(distances) / len(distances) if len(distances) != 0 else 99999999999 #not 1 user is connected so infinite
+    return sum(distances) / len(distances) if len(distances) != 0 else None  # not 1 user is connected so infinite
 
 
 def isolated_systems(base_stations):
@@ -122,3 +135,77 @@ def shannon_capacity(bandwidth, TX, distance):
     SNR = to_pwr(RX) / to_pwr(SIGNAL_NOISE)
     capacity = bandwidth * math.log2(1 + SNR)
     return capacity
+
+
+def avg(list):
+    length = 0
+    total_sum = 0
+
+    for i in list:
+        if i is not None:
+            length += 1
+            total_sum += i
+
+    return total_sum / length if length > 0 else -1
+
+
+def get_x_values():
+    if LARGE_DISASTER:
+        return [RADIUS_PER_SEVERITY * r for r in range(SEVERITY_ROUNDS)]
+    elif MALICIOUS_ATTACK:
+        return [(FUNCTIONALITY_DECREASED_PER_SEVERITY * s) for s in range(SEVERITY_ROUNDS)]
+    elif SMALL_ERRORS:
+        pass
+
+
+def create_plot(city_results):
+    fig = go.Figure()
+    x_values = get_x_values()
+
+    for city in city_results:
+        results = [m.get_metrics() for m in city_results[city]]
+        errors = [m.get_cdf() for m in city_results[city]]
+        fig.add_trace(go.Scatter(
+            x=x_values,
+            y=[r[1] for r in results if r[1]],
+            mode='lines+markers',
+            name=city.name,
+            error_y=dict(
+                type='data',
+                array=[e[1] for e in errors if e[1]],
+                visible=True
+            )
+        ))
+
+    fig.show()
+
+    pass
+
+
+def cdf(data, confidence=0.95):
+    processed_data = [d for d in data if d]
+    if len(processed_data) == 0:
+        return 0
+
+    if len(processed_data) == 1:
+        return 0
+
+    mean, se = np.mean(processed_data), st.sem(processed_data)
+    h = se * st.t.ppf((1 + confidence) / 2, len(processed_data) - 1)
+    return h
+
+
+def create_new_file():
+    with open(SAVE_CSV_PATH, 'w', newline='') as f:
+        fieldnames = ['city', 'severity', 'isolated_users', 'received_service', 'received_service_half', 'avg_distance', 'isolated_systems']
+        csv_writer = csv.writer(f)
+        csv_writer.writerow(fieldnames)
+
+
+def save_data(city, metrics):
+    with open(SAVE_CSV_PATH, 'a', newline='') as f:
+        csv_writer = csv.writer(f)
+        for i in range(SEVERITY_ROUNDS):
+            metric = metrics[i].csv_export()
+            for m in metric:
+                csv_writer.writerow([city.name, i] + m)

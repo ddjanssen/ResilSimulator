@@ -3,11 +3,18 @@ import numpy as np
 DATA_PATH = "data/204.csv"
 CITY_PATH = "data/city.csv"
 
+SAVE_IN_CSV = True
+CREATE_PLOT = False
+SAVE_CSV_PATH = "large_disaster_power_outage.csv"
 
+AMOUNT_THREADS = 10
 
 UE_CAPACITY_MIN = 10
 UE_CAPACITY_MAX = 100
 
+SEVERITY_ROUNDS = 10
+ROUNDS_PER_SEVERITY = 30
+ROUNDS_PER_USER = 30
 
 # CITY SPECIFIC PARAMETERS
 ACTIVITY = 0.007
@@ -35,15 +42,18 @@ SIGNAL_NOISE = -100
 # if a large disaster occured, for instance a natural disaster or a depending failure
 LARGE_DISASTER = True
 POWER_OUTAGE = True
-LOC_LON = 6.90
-LOC_LAT = 52.19
-RADIUS = 5000
+RADIUS_PER_SEVERITY = 1000
 
 # malicious attacks on a certain region, for instance a DDoS
 MALICIOUS_ATTACK = False
+PERCENTAGE_BASE_STATIONS = 0.5
+FUNCTIONALITY_DECREASED_PER_SEVERITY = 0.1
 
 # small individual errors on some base stations
 SMALL_ERRORS = False
+PERCENTAGE_BS_PER_SEVERITY = 0.1
+MIN_FUNCTIONALITY = 0.3
+MAX_FUNCTIONALITY = 0.9
 
 
 

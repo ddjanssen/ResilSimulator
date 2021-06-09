@@ -34,8 +34,7 @@ class BS_UE_Link:
 
     @property
     def shannon_capacity(self):
-        # TODO discuss with supervisors if the functional parameter can be used like this
-        return self.base_station.functional * util.shannon_capacity(self.base_station.getBandwidth(self.ue),self.base_station.signal_strength,self.distance)
+        return util.shannon_capacity(self.base_station.getBandwidth(self.ue),self.base_station.signal_strength,self.distance)
 
 
     def __str__(self):

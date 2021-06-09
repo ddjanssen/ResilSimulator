@@ -1,50 +1,94 @@
 from objects.Link import BS_UE_Link
+from objects.Metrics import Metrics
 from src.objects.UE import UserEquipment
 from src.settings import *
 import numpy as np
 import util
 
 
-def main():
-    all_cities = util.load_cities()
+from multiprocessing import Pool
 
+def main():
+    if SAVE_IN_CSV:
+        util.create_new_file()
+
+    all_cities = util.load_cities()
+    city_results = dict()
     for city in all_cities:
         print("Starting simulation for city:{}".format(city.name))
-        base_stations, UE,links = setup(city)
-        print("Directing capacities to the users")
-        for bs in base_stations:
-            bs.direct_capacities()
+        base_stations = util.load(city.min_lat, city.min_lon, city.max_lat, city.max_lon)
+        results = []
+        for s in range(SEVERITY_ROUNDS):
+            results.append(Metrics())
 
-        print("Creating base line resilience metrics")
-        base_line = simulate(base_stations, UE, links)
 
-        print("Resetting base stations and UE")
-        reset_all(base_stations,UE)
-        print("Failing base stations and links")
-        fail(base_stations, links,city)
-        print("Connecting UE to BS again")
-        connect_UE_BS(UE,base_stations)
-        print("Directing capacities to the users")
-        for bs in base_stations:
-            bs.direct_capacities()
+        with Pool(AMOUNT_THREADS) as p:
+            res = p.starmap(pool_func,arg_list(city,base_stations))
 
-        print("Creating resilience metrics after failure")
-        values = simulate(base_stations, UE, links)
+            for r in res:
+                for m in range(len(r)):
+                    results[m].add_metrics_object(r[m])
 
-        print("------------------------------------------------------")
+        print("")
+        for r in results:
+            print(r)
+        print("------------------------------------------------------\n")
+        city_results[city] = results
 
-    pass
+        if SAVE_IN_CSV:
+            util.save_data(city,results)
 
+    if CREATE_PLOT:
+        util.create_plot(city_results)
+
+
+
+
+def arg_list(city,base_stations):
+    res = []
+    for u in range(ROUNDS_PER_USER):
+        copy_bs = [bs.get_copy() for bs in base_stations]
+        res.append((u,copy_bs,city))
+
+    return res
+
+
+def pool_func(u,base_stations,city):
+    results = []
+    for s in range(SEVERITY_ROUNDS):
+        results.append(Metrics())
+
+    links = connected_base_stations(base_stations)
+    UE = create_UE(city)
+    connect_UE_BS(UE, base_stations)
+    for severity in range(SEVERITY_ROUNDS):
+        for r in range(ROUNDS_PER_SEVERITY):
+            print("\rStarting simulation:({},{},{})".format(u,severity, r), end='')
+            # print("Resetting base stations and UE")
+            reset_all(base_stations, UE)
+            # print("Failing base stations and links")
+            fail(base_stations, links, city, severity)
+            # print("Connecting UE to BS again")
+            connect_UE_BS(UE, base_stations)
+            # print("Directing capacities to the users")
+            for bs in base_stations:
+                bs.direct_capacities()
+
+            # print("Creating resilience metrics after failure")
+            values = simulate(base_stations, UE, links)
+            results[severity].add_metric(values)
+
+    return results
 
 def setup(city):
     print("Loading base stations")
-    base_stations = util.load(city.min_lat,city.min_lon,city.max_lat,city.max_lon)
+    base_stations = util.load(city.min_lat, city.min_lon, city.max_lat, city.max_lon)
     print("Creating links between base stations")
     links = connected_base_stations(base_stations)
     print("Creating UE")
     UE = create_UE(city)
     print("Connecting UE to BS")
-    connect_UE_BS(UE,base_stations)
+    connect_UE_BS(UE, base_stations)
     return base_stations, UE, links
 
 
@@ -78,7 +122,6 @@ def create_UE(city):
         new_UE = UserEquipment(i, lon, lat, all_cap[i])
         all_UE.append(new_UE)
 
-
     return all_UE
 
 
@@ -88,7 +131,7 @@ def connect_UE_BS(UE, base_stations):
         for j in range(len(base_stations)):
             bs = base_stations[j]
             dist = util.distance(user.lat, user.lon, bs.lat, bs.lon)
-            if dist < bs.range_bs and bs.functional > 0:
+            if dist < bs.range_bs and bs.functional > 1 / OPEN_CHANNELS:
                 if not closest_bs:
                     closest_bs = (bs, dist)
                     continue
@@ -104,49 +147,49 @@ def connect_UE_BS(UE, base_stations):
             user.set_base_station(new_link)
 
 
-def fail(base_stations, links,city):
-    # TODO: determine how well each BS will function when an error occured
+def fail(base_stations, links, city, severity):
     if LARGE_DISASTER:
-        random_lat = np.random.uniform(city.min_lat,city.max_lat,1)[0]
-        random_lon = np.random.uniform(city.min_lon,city.max_lon,1)[0]
-
+        radius = severity * RADIUS_PER_SEVERITY
+        random_lat = np.random.uniform(city.min_lat, city.max_lat, 1)[0]
+        random_lon = np.random.uniform(city.min_lon, city.max_lon, 1)[0]
 
         for BS in base_stations:
             dist = util.distance(BS.lat, BS.lon, random_lat, random_lon)
-            if dist < RADIUS:
-                # When closer to the epicentre the BS will function less good
+            if dist < radius:
                 if POWER_OUTAGE:
                     BS.malfunction(0)
                 else:
-                    BS.malfunction(1 - (dist / RADIUS))
+                    # When closer to the epicentre the BS will function less good
+                    BS.malfunction((dist / radius) ** 2)
 
     elif MALICIOUS_ATTACK:
-        pass
+        affected_bs = np.random.choice(base_stations, round(len(base_stations) * PERCENTAGE_BASE_STATIONS), replace=False)
+        for BS in affected_bs:
+            BS.malfunction(1 - (severity * FUNCTIONALITY_DECREASED_PER_SEVERITY))
     elif SMALL_ERRORS:
-        pass
-
-    pass
+        affected_bs = np.random.choice(base_stations, round(len(base_stations) * PERCENTAGE_BS_PER_SEVERITY * severity), replace=False)
+        for BS in affected_bs:
+            BS.malfunction(np.random.uniform(MIN_FUNCTIONALITY, MAX_FUNCTIONALITY, 1)[0])
 
 
 def simulate(base_stations, UE, links):
-    # TODO: create a simulation that simulates packet flow etc
-    # TODO: also determines the resilience
-
     iso_users = util.isolated_users(UE)
     percentage_received_service = util.received_service(UE)
+
+    percentage_received_service_half = util.received_service_half(UE)
     average_distance_to_bs = util.avg_distance(UE)
 
     iso_systems = util.isolated_systems(base_stations)
+    return iso_users, percentage_received_service, percentage_received_service_half, average_distance_to_bs, iso_systems
 
-    print(iso_users, percentage_received_service, average_distance_to_bs,iso_systems)
 
-
-def reset_all(base_stations,UE):
+def reset_all(base_stations, UE):
     for bs in base_stations:
         bs.reset()
 
     for user in UE:
         user.reset()
+
 
 if __name__ == '__main__':
     main()
