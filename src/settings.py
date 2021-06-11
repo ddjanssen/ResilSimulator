@@ -5,16 +5,16 @@ CITY_PATH = "data/city.csv"
 
 SAVE_IN_CSV = True
 CREATE_PLOT = False
-SAVE_CSV_PATH = "malicious_attack.csv"
+SAVE_CSV_PATH = "large_disaster_v2.csv"
 
-AMOUNT_THREADS = 10
+AMOUNT_THREADS = 22
 
 UE_CAPACITY_MIN = 10
 UE_CAPACITY_MAX = 100
 
 SEVERITY_ROUNDS = 10
-ROUNDS_PER_SEVERITY = 30
-ROUNDS_PER_USER = 30
+ROUNDS_PER_SEVERITY = 1
+ROUNDS_PER_USER = 100
 
 # CITY SPECIFIC PARAMETERS
 ACTIVITY = 0.007
@@ -40,12 +40,12 @@ SIGNAL_NOISE = -100
 # RISKS ENABLED
 
 # if a large disaster occured, for instance a natural disaster or a depending failure
-LARGE_DISASTER = False
-POWER_OUTAGE = True
+LARGE_DISASTER = True
+POWER_OUTAGE = False
 RADIUS_PER_SEVERITY = 1000
 
 # malicious attacks on a certain region, for instance a DDoS
-MALICIOUS_ATTACK = True
+MALICIOUS_ATTACK = False
 PERCENTAGE_BASE_STATIONS = 0.5
 FUNCTIONALITY_DECREASED_PER_SEVERITY = 0.1
 

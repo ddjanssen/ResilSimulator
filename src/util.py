@@ -54,10 +54,6 @@ def load(min_lat, min_lon, max_lat, max_lon):
     return all_basestations
 
 
-def SNR(signal_strength, signal_noise):
-    return signal_strength / signal_noise
-
-
 def pathloss(distance):
     return (MODEL_A + MODEL_B * log10(distance / 1000)) * sqrt(10) * np.random.random()
 
@@ -118,8 +114,16 @@ def isolated_systems(base_stations):
 
 
 def SNR_averages(UE):
-    snrs = [SNR(user.base_station.signal_strength, pathloss(user.distance)) for user in UE]
-    return sum(snrs) / len(snrs)
+    snrs = [user.SNR for user in UE if user.link]
+    return sum(snrs) / len(snrs) if len(snrs) > 0 else 0
+
+
+def active_base_stations(BS):
+    return sum([1 if bs.functional >= 0.2 else 0 for bs in BS])
+
+
+def connected_UE_BS(base_stations):
+    return sum([len(bs.connected_UE) for bs in base_stations]) / len(base_stations)
 
 
 def to_pwr(db):
@@ -135,6 +139,12 @@ def shannon_capacity(bandwidth, TX, distance):
     SNR = to_pwr(RX) / to_pwr(SIGNAL_NOISE)
     capacity = bandwidth * math.log2(1 + SNR)
     return capacity
+
+
+def SNR(TX, distance):
+    RX = TX - max(pathloss(distance) - G_TX - G_RX, MCL)
+    SNR = to_pwr(RX) / to_pwr(SIGNAL_NOISE)
+    return SNR
 
 
 def avg(list):
@@ -159,25 +169,26 @@ def get_x_values():
 
 
 def create_plot(city_results):
-    fig = go.Figure()
     x_values = get_x_values()
 
-    for city in city_results:
-        results = [m.get_metrics() for m in city_results[city]]
-        errors = [m.get_cdf() for m in city_results[city]]
-        fig.add_trace(go.Scatter(
-            x=x_values,
-            y=[r[1] for r in results if r[1]],
-            mode='lines+markers',
-            name=city.name,
-            error_y=dict(
-                type='data',
-                array=[e[1] for e in errors if e[1]],
-                visible=True
-            )
-        ))
+    for z in range(7):
+        fig = go.Figure()
+        for city in city_results:
+            results = [m.get_metrics() for m in city_results[city]]
+            errors = [m.get_cdf() for m in city_results[city]]
+            fig.add_trace(go.Scatter(
+                x=x_values,
+                y=[r[z] for r in results if r[z]],
+                mode='lines+markers',
+                name=city.name,
+                error_y=dict(
+                    type='data',
+                    array=[e[z] for e in errors if e[z]],
+                    visible=True
+                )
+            ))
 
-    fig.show()
+        fig.show()
 
     pass
 
@@ -194,7 +205,7 @@ def cdf(data, confidence=0.95):
 
 def create_new_file():
     with open(SAVE_CSV_PATH, 'w', newline='') as f:
-        fieldnames = ['city', 'severity', 'isolated_users', 'received_service', 'received_service_half', 'avg_distance', 'isolated_systems']
+        fieldnames = ['city', 'severity', 'isolated_users', 'received_service', 'received_service_half', 'avg_distance', 'isolated_systems', 'active_base_stations', 'avg_snr', 'connected_UE_BS']
         csv_writer = csv.writer(f)
         csv_writer.writerow(fieldnames)
 

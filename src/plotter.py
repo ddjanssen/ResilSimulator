@@ -22,6 +22,9 @@ def load():
             received_service_half = float(row["received_service_half"]) if row["received_service_half"] != '' else None
             avg_distance = float(row["avg_distance"]) if row["avg_distance"] != '' else None
             isolated_systems = float(row["isolated_systems"]) if row["isolated_users"] != '' else None
+            active_base_stations = float(row["active_base_stations"]) if row["active_base_stations"] else None
+            avg_snr = float(row["avg_snr"]) if row["avg_snr"] else None
+            connected_UE_BS = float(row["connected_UE_BS"]) if row["connected_UE_BS"] else None
 
             if city not in sub_city_results:
                 sub_city_results[city] = []
@@ -29,7 +32,14 @@ def load():
             while severity >= len(sub_city_results[city]):
                 sub_city_results[city].append(Metrics())
 
-            sub_city_results[city][severity].add_metric((isolated_users,received_service,received_service_half,avg_distance,isolated_systems))
+            sub_city_results[city][severity].add_metric((isolated_users,
+                                                         received_service,
+                                                         received_service_half,
+                                                         avg_distance,
+                                                         isolated_systems,
+                                                         active_base_stations,
+                                                         avg_snr,
+                                                         connected_UE_BS))
 
 
     city_results = dict()

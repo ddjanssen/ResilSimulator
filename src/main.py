@@ -180,7 +180,14 @@ def simulate(base_stations, UE, links):
     average_distance_to_bs = util.avg_distance(UE)
 
     iso_systems = util.isolated_systems(base_stations)
-    return iso_users, percentage_received_service, percentage_received_service_half, average_distance_to_bs, iso_systems
+
+    active_base_stations = util.active_base_stations(base_stations)
+
+    avg_snr = util.SNR_averages(UE)
+
+    connected_UE_BS = util.connected_UE_BS(base_stations)
+
+    return iso_users, percentage_received_service, percentage_received_service_half, average_distance_to_bs, iso_systems,active_base_stations,avg_snr,connected_UE_BS
 
 
 def reset_all(base_stations, UE):

@@ -1,9 +1,4 @@
-from math import sin, cos, sqrt, atan2, radians
-
-from objects.BaseStation import BaseStation
 from objects.Link import BS_UE_Link
-from src.util import distance
-
 
 class UserEquipment:
     def __init__(self, id: int, lon: float, lat: float, capacity: int):
@@ -16,6 +11,10 @@ class UserEquipment:
 
     def set_base_station(self, link: BS_UE_Link):
         self.link = link
+
+    @property
+    def SNR(self):
+        return self.link.SNR
 
     def __str__(self):
         return "UE[{}], bandwith: {}, lon: {}, lat: {}".format(self.id, self.requested_capacity, self.lon, self.lat)

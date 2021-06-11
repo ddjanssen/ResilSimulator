@@ -36,6 +36,10 @@ class BS_UE_Link:
     def shannon_capacity(self):
         return util.shannon_capacity(self.base_station.getBandwidth(self.ue),self.base_station.signal_strength,self.distance)
 
+    @property
+    def SNR(self):
+        return util.SNR(self.base_station.signal_strength,self.distance)
+
 
     def __str__(self):
         return "Link between {} and {}".format(self.ue, self.base_station)
