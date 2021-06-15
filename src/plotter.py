@@ -1,11 +1,23 @@
 import util
 from objects.City import City
 from objects.Metrics import Metrics
-from settings import SAVE_CSV_PATH
+from settings import SAVE_CSV_PATH, CITY_PATH
 import csv
 
 
 def load():
+    all_cities = []
+    with open(CITY_PATH,newline='') as f:
+        filereader = csv.DictReader(f)
+        for row in filereader:
+            all_cities.append(str(row['name']))
+
+
+
+
+
+
+
     sub_city_results = dict()
 
     print("importing file")
@@ -16,6 +28,8 @@ def load():
         for row in filereader:
 
             city = str(row["city"])
+            if city not in all_cities:
+                continue
             severity = int(row["severity"])
             isolated_users = float(row["isolated_users"]) if row["isolated_users"] != '' else None
             received_service = float(row["received_service"]) if row["received_service"] != '' else None

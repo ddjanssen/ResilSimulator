@@ -24,6 +24,9 @@ class BaseStation:
         self.connected_UE = list()
         self.connected_BS = list()
 
+        self.minimum_band_needed = dict()
+
+
         self.channels = list()
         for g in range(OPEN_CHANNELS):
             self.channels.append(Channel(g))
@@ -54,46 +57,38 @@ class BaseStation:
         self.connected_UE_links.append(link)
         self.connected_UE.append(link.ue)
 
+        if link.bandwidthneeded not in self.minimum_band_needed:
+            self.minimum_band_needed[link.bandwidthneeded] = list()
+
+        self.minimum_band_needed[link.bandwidthneeded].append(link.ue)
+        channel = max(self.channels, key=lambda c: (c.productivity, c.band_left))
+        channel.add_devices(link.ue, link.bandwidthneeded)
+
     def direct_capacities(self):
-        UE = sorted(self.connected_UE, key=lambda ue: ue.requested_capacity)
-        minimum_band_needed = dict()
-        bandwidth_length = len(CHANNEL_BANDWIDTHS)
+        self.create_new_channels()
+        self.connected_UE = sorted(self.connected_UE, key= lambda x: x.link.bandwidthneeded,reverse=True)
+        for UE in self.connected_UE:
+            channel = max(self.channels, key=lambda c: (c.productivity, c.band_left))
+            channel.add_devices(UE, UE.link.bandwidthneeded)
 
-        for ue in UE:
-            bandwidthneeded = None
-            for bandwidth in range(bandwidth_length):
-                service = util.shannon_capacity(CHANNEL_BANDWIDTHS[bandwidth], self.signal_strength, ue.link.distance)
-                if service < ue.requested_capacity:
-                    if bandwidth == 0:
-                        bandwidthneeded = CHANNEL_BANDWIDTHS[0]
-                    else:
-                        bandwidthneeded = CHANNEL_BANDWIDTHS[bandwidth - 1]
-                    break
 
-                if bandwidth == bandwidth_length - 1:
-                    bandwidthneeded = CHANNEL_BANDWIDTHS[-1]
+    @property
+    def overflow(self):
+        for UE in self.connected_UE:
+            if self.getBandwidth(UE) == 0:
+                return True
 
-            if bandwidthneeded not in minimum_band_needed:
-                minimum_band_needed[bandwidthneeded] = list()
+        return False
 
-            minimum_band_needed[bandwidthneeded].append(ue)
-
-        for bandwidth in CHANNEL_BANDWIDTHS:
-            if bandwidth not in minimum_band_needed:
-                continue
-
-            ues = minimum_band_needed[bandwidth]
-            for ue in ues:
-                channel = max(self.channels,key=lambda c:(c.productivity,c.band_left))
-                channel.add_devices(ue,bandwidth)
+    def remove_UE(self,UE_link):
+        self.connected_UE_links.remove(UE_link)
+        self.connected_UE.remove(UE_link.ue)
 
     def getBandwidth(self,UE):
         for channel in self.channels:
             bandwidth = channel.getBandwidth(UE)
             if bandwidth is not None:
                 return bandwidth
-
-
         return 0
 
     def create_new_channels(self):
@@ -101,6 +96,7 @@ class BaseStation:
         self.channels.clear()
         for g in range(z):
             self.channels.append(Channel(g))
+
 
     def reset(self):
         self.functional = 1

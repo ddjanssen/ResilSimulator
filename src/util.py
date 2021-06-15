@@ -71,8 +71,9 @@ def received_service(UE):
 
     for user in UE:
         if user.link is not None:
-            perc = 1 if user.link.shannon_capacity / user.requested_capacity else user.link.shannon_capacity / user.requested_capacity
-            percentages.append(perc)
+            percentages.append(1 if user.link.shannon_capacity / user.requested_capacity > 1 else user.link.shannon_capacity / user.requested_capacity)
+        else:
+            percentages.append(0)
 
     return sum(percentages) / len(percentages) if len(percentages) != 0 else 0
 
@@ -114,7 +115,13 @@ def isolated_systems(base_stations):
 
 
 def SNR_averages(UE):
-    snrs = [user.SNR for user in UE if user.link]
+
+    snrs = []
+    for user in UE:
+        if user.link:
+            snrs.append(user.SNR)
+        else:
+            snrs.append(0)
     return sum(snrs) / len(snrs) if len(snrs) > 0 else 0
 
 
@@ -140,6 +147,8 @@ def shannon_capacity(bandwidth, TX, distance):
     capacity = bandwidth * math.log2(1 + SNR)
     return capacity
 
+def second_param_capacity(TX, distance):
+    return math.log2(1 + SNR(TX,distance))
 
 def SNR(TX, distance):
     RX = TX - max(pathloss(distance) - G_TX - G_RX, MCL)
@@ -171,7 +180,7 @@ def get_x_values():
 def create_plot(city_results):
     x_values = get_x_values()
 
-    for z in range(7):
+    for z in range(8):
         fig = go.Figure()
         for city in city_results:
             results = [m.get_metrics() for m in city_results[city]]

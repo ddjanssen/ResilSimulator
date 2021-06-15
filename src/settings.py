@@ -5,7 +5,7 @@ CITY_PATH = "data/city.csv"
 
 SAVE_IN_CSV = True
 CREATE_PLOT = False
-SAVE_CSV_PATH = "large_disaster_v2.csv"
+SAVE_CSV_PATH = "results/large_disaster_power_outage.csv"
 
 AMOUNT_THREADS = 22
 
@@ -13,7 +13,7 @@ UE_CAPACITY_MIN = 10
 UE_CAPACITY_MAX = 100
 
 SEVERITY_ROUNDS = 10
-ROUNDS_PER_SEVERITY = 1
+ROUNDS_PER_SEVERITY = 2
 ROUNDS_PER_USER = 100
 
 # CITY SPECIFIC PARAMETERS

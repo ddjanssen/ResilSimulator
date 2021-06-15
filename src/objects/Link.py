@@ -1,6 +1,7 @@
 import math
 
 import util
+from settings import CHANNEL_BANDWIDTHS
 
 
 class BS_BS_Link:
@@ -32,9 +33,30 @@ class BS_UE_Link:
 
         self.functional = 1
 
+        self.second_param_capacity = util.second_param_capacity(self.base_station.signal_strength,self.distance)
+
+        self.bandwidthneeded = None
+
+        if self.second_param_capacity != 0:
+            b = self.ue.requested_capacity / self.second_param_capacity
+
+            bandwidth_length = len(CHANNEL_BANDWIDTHS)
+            for bandwidth in range(bandwidth_length):
+                if b > bandwidth:
+                    if bandwidth == 0:
+                        self.bandwidthneeded = CHANNEL_BANDWIDTHS[0]
+                    else:
+                        self.bandwidthneeded = CHANNEL_BANDWIDTHS[bandwidth - 1]
+                    break
+
+                if bandwidth == bandwidth_length - 1:
+                    self.bandwidthneeded = CHANNEL_BANDWIDTHS[-1]
+
     @property
     def shannon_capacity(self):
-        return util.shannon_capacity(self.base_station.getBandwidth(self.ue),self.base_station.signal_strength,self.distance)
+        return self.base_station.getBandwidth(self.ue) * self.second_param_capacity
+
+        # return util.shannon_capacity(self.base_station.getBandwidth(self.ue),self.base_station.signal_strength,self.distance)
 
     @property
     def SNR(self):

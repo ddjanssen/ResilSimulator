@@ -5,8 +5,8 @@ from src.settings import *
 import numpy as np
 import util
 
-
 from multiprocessing import Pool
+
 
 def main():
     if SAVE_IN_CSV:
@@ -21,9 +21,10 @@ def main():
         for s in range(SEVERITY_ROUNDS):
             results.append(Metrics())
 
+        argument_list = arg_list(city, base_stations)
 
         with Pool(AMOUNT_THREADS) as p:
-            res = p.starmap(pool_func,arg_list(city,base_stations))
+            res = p.starmap(pool_func, argument_list)
 
             for r in res:
                 for m in range(len(r)):
@@ -36,24 +37,22 @@ def main():
         city_results[city] = results
 
         if SAVE_IN_CSV:
-            util.save_data(city,results)
+            util.save_data(city, results)
 
     if CREATE_PLOT:
         util.create_plot(city_results)
 
 
-
-
-def arg_list(city,base_stations):
+def arg_list(city, base_stations):
     res = []
     for u in range(ROUNDS_PER_USER):
         copy_bs = [bs.get_copy() for bs in base_stations]
-        res.append((u,copy_bs,city))
+        res.append((u, copy_bs, city))
 
     return res
 
 
-def pool_func(u,base_stations,city):
+def pool_func(u, base_stations, city):
     results = []
     for s in range(SEVERITY_ROUNDS):
         results.append(Metrics())
@@ -63,7 +62,7 @@ def pool_func(u,base_stations,city):
     connect_UE_BS(UE, base_stations)
     for severity in range(SEVERITY_ROUNDS):
         for r in range(ROUNDS_PER_SEVERITY):
-            print("\rStarting simulation:({},{},{})".format(u,severity, r), end='')
+            print("\rStarting simulation:({},{},{})".format(u, severity, r), end='')
             # print("Resetting base stations and UE")
             reset_all(base_stations, UE)
             # print("Failing base stations and links")
@@ -71,14 +70,12 @@ def pool_func(u,base_stations,city):
             # print("Connecting UE to BS again")
             connect_UE_BS(UE, base_stations)
             # print("Directing capacities to the users")
-            for bs in base_stations:
-                bs.direct_capacities()
-
             # print("Creating resilience metrics after failure")
             values = simulate(base_stations, UE, links)
             results[severity].add_metric(values)
 
     return results
+
 
 def setup(city):
     print("Loading base stations")
@@ -125,27 +122,49 @@ def create_UE(city):
     return all_UE
 
 
+# def connect_UE_BS(UE, base_stations):
+    # for user in UE:
+    #     closest_bs = None
+    #     for j in range(len(base_stations)):
+    #         bs = base_stations[j]
+    #         dist = util.distance(user.lat, user.lon, bs.lat, bs.lon)
+    #         if dist < bs.range_bs and bs.functional > 1 / OPEN_CHANNELS:
+    #             if not closest_bs:
+    #                 closest_bs = (bs, dist)
+    #                 continue
+    #
+    #             if dist < closest_bs[1] and bs.functional >= closest_bs[0].functional:
+    #                 closest_bs = (bs, dist)
+    #             elif bs.functional > closest_bs[0].functional:
+    #                 closest_bs = (bs, dist)
+    #
+    #     if closest_bs:
+    #         new_link = BS_UE_Link(user, closest_bs[0], closest_bs[1])
+    #         closest_bs[0].add_UE(new_link)
+    #         user.set_base_station(new_link)
+
+
 def connect_UE_BS(UE, base_stations):
     for user in UE:
-        closest_bs = None
-        for j in range(len(base_stations)):
-            bs = base_stations[j]
+        BS_in_area = []
+        for bs in base_stations:
             dist = util.distance(user.lat, user.lon, bs.lat, bs.lon)
-            if dist < bs.range_bs and bs.functional > 1 / OPEN_CHANNELS:
-                if not closest_bs:
-                    closest_bs = (bs, dist)
-                    continue
+            if (dist < bs.range_bs and bs.functional > (1 / OPEN_CHANNELS)):
+                BS_in_area.append((bs, dist))
 
-                if dist < closest_bs[1] and bs.functional >= closest_bs[0].functional:
-                    closest_bs = (bs, dist)
-                elif bs.functional > closest_bs[0].functional:
-                    closest_bs = (bs, dist)
-
-        if closest_bs:
-            new_link = BS_UE_Link(user, closest_bs[0], closest_bs[1])
-            closest_bs[0].add_UE(new_link)
+        BS_in_area = sorted(BS_in_area, key=lambda x: x[1])
+        for bs,dist in BS_in_area:
+            new_link = BS_UE_Link(user, bs, dist)
+            if new_link.bandwidthneeded is None:
+                continue
             user.set_base_station(new_link)
-
+            bs.add_UE(new_link)
+            if bs.overflow:
+                bs.remove_UE(new_link)
+                user.reset()
+                bs.direct_capacities()
+            else:
+                break
 
 def fail(base_stations, links, city, severity):
     if LARGE_DISASTER:
@@ -187,7 +206,7 @@ def simulate(base_stations, UE, links):
 
     connected_UE_BS = util.connected_UE_BS(base_stations)
 
-    return iso_users, percentage_received_service, percentage_received_service_half, average_distance_to_bs, iso_systems,active_base_stations,avg_snr,connected_UE_BS
+    return iso_users, percentage_received_service, percentage_received_service_half, average_distance_to_bs, iso_systems, active_base_stations, avg_snr, connected_UE_BS
 
 
 def reset_all(base_stations, UE):
