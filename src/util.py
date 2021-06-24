@@ -55,7 +55,7 @@ def load(min_lat, min_lon, max_lat, max_lon):
 
 
 def pathloss(distance):
-    return (MODEL_A + MODEL_B * log10(distance / 1000)) * sqrt(10) * np.random.random()
+    return (MODEL_A + MODEL_B * log10(distance / 1000)) + sqrt(10) * np.random.random()
 
 
 def isolated_users(UE):
@@ -115,7 +115,6 @@ def isolated_systems(base_stations):
 
 
 def SNR_averages(UE):
-
     snrs = []
     for user in UE:
         if user.link:
@@ -147,8 +146,10 @@ def shannon_capacity(bandwidth, TX, distance):
     capacity = bandwidth * math.log2(1 + SNR)
     return capacity
 
+
 def second_param_capacity(TX, distance):
-    return math.log2(1 + SNR(TX,distance))
+    return math.log2(1 + SNR(TX, distance))
+
 
 def SNR(TX, distance):
     RX = TX - max(pathloss(distance) - G_TX - G_RX, MCL)
@@ -168,42 +169,65 @@ def avg(list):
     return total_sum / length if length > 0 else -1
 
 
+def getUnit(index):
+    if index == 0:
+        return "#Isolated Users"
+    elif index == 1:
+        return "Satisfaciton level (%)"
+    elif index == 2:
+        return "50% Satisfaction level (%)"
+    elif index == 3:
+        return "Avg. Distance to BS (meters)"
+    elif index == 4:
+        return "#Isolated Systems"
+    elif index == 5:
+        return "#Active BS"
+    elif index == 6:
+        return "Avg. SNR (ratio)"
+    elif index == 7:
+        return "Avg. #users connected to BS"
+    else:
+        return "Error"
+
+
 def get_x_values():
     if LARGE_DISASTER:
-        return [RADIUS_PER_SEVERITY * r for r in range(SEVERITY_ROUNDS)]
+        return [RADIUS_PER_SEVERITY * r for r in range(SEVERITY_ROUNDS)], "Radius disaster (meters)"
     elif MALICIOUS_ATTACK:
-        return [(FUNCTIONALITY_DECREASED_PER_SEVERITY * s) for s in range(SEVERITY_ROUNDS)]
-    elif SMALL_ERRORS:
-        pass
+        return [(FUNCTIONALITY_DECREASED_PER_SEVERITY * s) for s in range(SEVERITY_ROUNDS)], "Functionality decreased of BS"
+    elif ENVIRONMENTAL_RISK:
+        return [s* ENV_SIGNAL_DEDUC_PER_SEVERITY for s in range(SEVERITY_ROUNDS)], "Signal strength reduced (%)"
+    elif INCREASING_REQUESTED_DATA:
+        return [s for s in range(SEVERITY_ROUNDS)], "Severity level of increasing data"
 
 
 def create_plot(city_results):
-    x_values = get_x_values()
+    x_values, unit = get_x_values()
 
-    for z in range(8):
+    for z in [0]:
         fig = go.Figure()
         for city in city_results:
             results = [m.get_metrics() for m in city_results[city]]
             errors = [m.get_cdf() for m in city_results[city]]
             fig.add_trace(go.Scatter(
                 x=x_values,
-                y=[r[z] for r in results if r[z]],
+                y=[r[z] for r in results if r[z] is not None],
                 mode='lines+markers',
-                name=city.name,
+                name=city.abbreviation,
                 error_y=dict(
                     type='data',
-                    array=[e[z] for e in errors if e[z]],
+                    array=[e[z] for e in errors if e[z] is not None],
                     visible=True
                 )
             ))
-
+        fig.update_layout(xaxis_title=unit, yaxis_title=getUnit(z), legend=dict(yanchor="bottom", y=0.2, xanchor="left", x=0.05))
         fig.show()
 
     pass
 
 
 def cdf(data, confidence=0.95):
-    processed_data = [d for d in data if d]
+    processed_data = [d for d in data if d is not None]
     if len(processed_data) == 0 or len(processed_data) == 1:
         return 0
 

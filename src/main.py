@@ -17,6 +17,9 @@ def main():
     for city in all_cities:
         print("Starting simulation for city:{}".format(city.name))
         base_stations = util.load(city.min_lat, city.min_lon, city.max_lat, city.max_lon)
+        if ENVIRONMENTAL_RISK:
+            for bs in base_stations:
+                bs.range_bs = bs.range_bs * PERCENTAGE_RANGE_BS
         results = []
         for s in range(SEVERITY_ROUNDS):
             results.append(Metrics())
@@ -66,9 +69,9 @@ def pool_func(u, base_stations, city):
             # print("Resetting base stations and UE")
             reset_all(base_stations, UE)
             # print("Failing base stations and links")
-            fail(base_stations, links, city, severity)
+            fail(base_stations,UE, links, city, severity)
             # print("Connecting UE to BS again")
-            connect_UE_BS(UE, base_stations)
+            connect_UE_BS(UE, base_stations,severity)
             # print("Directing capacities to the users")
             # print("Creating resilience metrics after failure")
             values = simulate(base_stations, UE, links)
@@ -144,7 +147,7 @@ def create_UE(city):
     #         user.set_base_station(new_link)
 
 
-def connect_UE_BS(UE, base_stations):
+def connect_UE_BS(UE, base_stations,severity=0):
     for user in UE:
         BS_in_area = []
         for bs in base_stations:
@@ -154,7 +157,11 @@ def connect_UE_BS(UE, base_stations):
 
         BS_in_area = sorted(BS_in_area, key=lambda x: x[1])
         for bs,dist in BS_in_area:
-            new_link = BS_UE_Link(user, bs, dist)
+            if ENVIRONMENTAL_RISK:
+                new_link = BS_UE_Link(user, bs, dist,signal_deduction=1 - ENV_SIGNAL_DEDUC_PER_SEVERITY * severity)
+            else:
+                new_link = BS_UE_Link(user, bs, dist)
+
             if new_link.bandwidthneeded is None:
                 continue
             user.set_base_station(new_link)
@@ -166,7 +173,7 @@ def connect_UE_BS(UE, base_stations):
             else:
                 break
 
-def fail(base_stations, links, city, severity):
+def fail(base_stations,UE, links, city, severity):
     if LARGE_DISASTER:
         radius = severity * RADIUS_PER_SEVERITY
         random_lat = np.random.uniform(city.min_lat, city.max_lat, 1)[0]
@@ -185,10 +192,14 @@ def fail(base_stations, links, city, severity):
         affected_bs = np.random.choice(base_stations, round(len(base_stations) * PERCENTAGE_BASE_STATIONS), replace=False)
         for BS in affected_bs:
             BS.malfunction(1 - (severity * FUNCTIONALITY_DECREASED_PER_SEVERITY))
-    elif SMALL_ERRORS:
-        affected_bs = np.random.choice(base_stations, round(len(base_stations) * PERCENTAGE_BS_PER_SEVERITY * severity), replace=False)
-        for BS in affected_bs:
-            BS.malfunction(np.random.uniform(MIN_FUNCTIONALITY, MAX_FUNCTIONALITY, 1)[0])
+
+    elif INCREASING_REQUESTED_DATA:
+        x = OFFSET + DATA_PER_SEV * severity
+        all_cap = np.random.randint(x, x + WINDOW_SIZE, city.population_amount)
+        for i in range(len(UE)):
+            user = UE[i]
+            cap = all_cap[i]
+            user.requested_capacity = cap
 
 
 def simulate(base_stations, UE, links):

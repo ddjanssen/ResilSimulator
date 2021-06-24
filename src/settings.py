@@ -5,7 +5,7 @@ CITY_PATH = "data/city.csv"
 
 SAVE_IN_CSV = True
 CREATE_PLOT = False
-SAVE_CSV_PATH = "results/large_disaster_power_outage.csv"
+SAVE_CSV_PATH = "resultsv2/natural_disaster2.csv"
 
 AMOUNT_THREADS = 22
 
@@ -40,7 +40,7 @@ SIGNAL_NOISE = -100
 # RISKS ENABLED
 
 # if a large disaster occured, for instance a natural disaster or a depending failure
-LARGE_DISASTER = True
+LARGE_DISASTER = False
 POWER_OUTAGE = False
 RADIUS_PER_SEVERITY = 1000
 
@@ -50,11 +50,16 @@ PERCENTAGE_BASE_STATIONS = 0.5
 FUNCTIONALITY_DECREASED_PER_SEVERITY = 0.1
 
 # small individual errors on some base stations
-SMALL_ERRORS = False
-PERCENTAGE_BS_PER_SEVERITY = 0.1
-MIN_FUNCTIONALITY = 0.3
-MAX_FUNCTIONALITY = 0.9
+ENVIRONMENTAL_RISK = False
+PERCENTAGE_RANGE_BS = 0.8
+ENV_SIGNAL_DEDUC_PER_SEVERITY = 0.05
 
+
+# increasing requested data
+INCREASING_REQUESTED_DATA = True
+OFFSET = 10
+DATA_PER_SEV = 10
+WINDOW_SIZE = 10
 
 
 

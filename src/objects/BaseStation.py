@@ -114,6 +114,9 @@ class Channel:
 
         self.desired_band = dict()
 
+        a = [20,15,10,5,3,1.3]
+        d1 = 12
+
     def add_devices(self, UE, minimumbandwidth):
         self.devices[UE] = minimumbandwidth
         self.desired_band[UE] = minimumbandwidth

@@ -1,7 +1,7 @@
 import math
 
 import util
-from settings import CHANNEL_BANDWIDTHS
+from settings import CHANNEL_BANDWIDTHS, SIGNAL_NOISE
 
 
 class BS_BS_Link:
@@ -26,11 +26,11 @@ class BS_BS_Link:
 
 
 class BS_UE_Link:
-    def __init__(self, ue, base_station, distance:float):
+    def __init__(self, ue, base_station, distance:float,signal_deduction:float=1):
         self.ue = ue
         self.base_station = base_station
         self.distance = distance
-
+        self.signal_deduction = signal_deduction
         self.functional = 1
 
         self.second_param_capacity = util.second_param_capacity(self.base_station.signal_strength,self.distance)
@@ -54,13 +54,19 @@ class BS_UE_Link:
 
     @property
     def shannon_capacity(self):
-        return self.base_station.getBandwidth(self.ue) * self.second_param_capacity
+        return self.base_station.getBandwidth(self.ue) * self.second_param_capacity * self.signal_deduction
 
         # return util.shannon_capacity(self.base_station.getBandwidth(self.ue),self.base_station.signal_strength,self.distance)
 
     @property
     def SNR(self):
         return util.SNR(self.base_station.signal_strength,self.distance)
+
+
+    def set_signal_noise(self,new_noise):
+        self.signal_noise = new_noise
+        self.second_param_capacity = util.second_param_capacity(self.base_station.signal_strength,self.distance)
+
 
 
     def __str__(self):
