@@ -5,7 +5,7 @@ CITY_PATH = "data/city.csv"
 
 SAVE_IN_CSV = True
 CREATE_PLOT = False
-SAVE_CSV_PATH = "resultsv2/natural_disaster2.csv"
+SAVE_CSV_PATH = "resultsv2/malicious_attack2.csv"
 
 AMOUNT_THREADS = 22
 
@@ -45,7 +45,7 @@ POWER_OUTAGE = False
 RADIUS_PER_SEVERITY = 1000
 
 # malicious attacks on a certain region, for instance a DDoS
-MALICIOUS_ATTACK = False
+MALICIOUS_ATTACK = True
 PERCENTAGE_BASE_STATIONS = 0.5
 FUNCTIONALITY_DECREASED_PER_SEVERITY = 0.1
 
